@@ -246,13 +246,13 @@ const GuitarChordTrainer = () => {
                 <Slider
                   value={[timePerChord]}
                   onValueChange={(value) => setTimePerChord(value[0])}
-                  min={3}
+                  min={1}
                   max={45}
                   step={1}
                   className="w-full"
                 />
                 <div className="flex justify-between text-sm text-slate-500">
-                  <span>3s</span>
+                  <span>1s</span>
                   <span>45s</span>
                 </div>
               </div>
