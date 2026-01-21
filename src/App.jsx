@@ -15,7 +15,7 @@ const INSTRUMENTS = {
     baseUrl: 'https://gleitz.github.io/midi-js-soundfonts/FluidR3_GM/acoustic_guitar_nylon-mp3/',
   },
   electric_clean: {
-    label: 'Clean Electric',
+    label: 'Electric Guitar',
     icon: Zap,
     baseUrl: 'https://gleitz.github.io/midi-js-soundfonts/FluidR3_GM/electric_guitar_clean-mp3/',
   },
@@ -246,14 +246,14 @@ const GuitarChordTrainer = () => {
                 <Slider
                   value={[timePerChord]}
                   onValueChange={(value) => setTimePerChord(value[0])}
-                  min={5}
-                  max={30}
+                  min={3}
+                  max={45}
                   step={1}
                   className="w-full"
                 />
                 <div className="flex justify-between text-sm text-slate-500">
-                  <span>5s</span>
-                  <span>30s</span>
+                  <span>3s</span>
+                  <span>45s</span>
                 </div>
               </div>
 
