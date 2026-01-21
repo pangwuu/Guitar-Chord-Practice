@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Play, Settings, ChevronRight, RotateCcw, Check, SkipForward, Eye, EyeOff, Music } from 'lucide-react';
+import { Play, Settings, ChevronRight, RotateCcw, Check, SkipForward, Eye, EyeOff, Music, Guitar, Zap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
@@ -11,14 +11,17 @@ import * as Tone from 'tone';
 const INSTRUMENTS = {
   acoustic: {
     label: 'Acoustic Guitar',
+    icon: Guitar,
     baseUrl: 'https://gleitz.github.io/midi-js-soundfonts/FluidR3_GM/acoustic_guitar_nylon-mp3/',
   },
   electric_clean: {
-    label: 'Electric Guitar',
+    label: 'Clean Electric',
+    icon: Zap,
     baseUrl: 'https://gleitz.github.io/midi-js-soundfonts/FluidR3_GM/electric_guitar_clean-mp3/',
   },
   piano: {
     label: 'Piano',
+    icon: Music,
     baseUrl: 'https://gleitz.github.io/midi-js-soundfonts/FluidR3_GM/acoustic_grand_piano-mp3/',
   },
 };
@@ -43,7 +46,7 @@ const GuitarChordTrainer = () => {
   const difficultyOptions = [
     { value: 'beginner', label: 'Beginner', desc: 'Standard Open Chords' },
     { value: 'novice', label: 'Novice', desc: 'All Triads & Dom 7ths' },
-    { value: 'intermediate', label: 'Intermediate', desc: 'Inversions & maj7 chords' },
+    { value: 'intermediate', label: 'Intermediate', desc: 'Inversions & 7th chords' },
     { value: 'advanced', label: 'Advanced', desc: 'Diminished, 9ths, alterations' },
     { value: 'jazz', label: 'Jazz', desc: 'Complex extensions & voicings' },
   ];
@@ -194,8 +197,8 @@ const GuitarChordTrainer = () => {
               
               <div className="space-y-4">
                 <Label>Instrument</Label>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                  {Object.entries(INSTRUMENTS).map(([key, { label }]) => (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  {Object.entries(INSTRUMENTS).map(([key, { label, icon: Icon }]) => (
                     <Button
                       key={key}
                       variant={instrument === key ? "default" : "outline"}
@@ -207,7 +210,7 @@ const GuitarChordTrainer = () => {
                       }}
                       className="h-auto py-3 flex flex-col items-center justify-center text-center"
                     >
-                      <Music className="w-4 h-4 mb-2" />
+                      <Icon className="w-5 h-5 mb-2" />
                       <span className="text-sm">{label}</span>
                     </Button>
                   ))}
@@ -222,11 +225,13 @@ const GuitarChordTrainer = () => {
               <div className="space-y-4">
                 <Label>Difficulty Level</Label>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  {difficultyOptions.map(({ value, label, desc }) => (
+                  {difficultyOptions.map(({ value, label, desc }, index) => (
                     <Button
                       key={value}
                       variant={difficulty === value ? "default" : "outline"}
-                      className="h-auto py-4 flex flex-col items-start w-full"
+                      className={`h-auto py-4 flex flex-col items-start w-full ${
+                        index === difficultyOptions.length - 1 ? "md:col-span-2 md:w-1/2 md:mx-auto" : ""
+                      }`}
                       onClick={() => setDifficulty(value)}
                     >
                       <div className="font-bold text-base">{label}</div>
