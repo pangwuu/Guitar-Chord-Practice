@@ -19,6 +19,8 @@ interface SetupScreenProps {
   onCustomChordsChange: (chords: string[]) => void;
   includeInversions: boolean;
   onIncludeInversionsChange: (value: boolean) => void;
+  isTimed: boolean;
+  onTimedChange: (value: boolean) => void;
   timePerChord: number;
   onTimeChange: (value: number) => void;
   onStartGame: () => void;
@@ -36,6 +38,8 @@ const SetupScreen: React.FC<SetupScreenProps> = ({
   onCustomChordsChange,
   includeInversions,
   onIncludeInversionsChange,
+  isTimed,
+  onTimedChange,
   timePerChord,
   onTimeChange,
   onStartGame,
@@ -148,20 +152,37 @@ const SetupScreen: React.FC<SetupScreenProps> = ({
               </div>
             )}
 
-            <div className="space-y-4">
-              <Label>Time per Chord: {timePerChord} seconds</Label>
-              <Slider
-                value={[timePerChord]}
-                onValueChange={(value) => onTimeChange(value[0])}
-                min={1}
-                max={45}
-                step={1}
-                className="w-full"
-              />
-              <div className="flex justify-between text-sm text-slate-500">
-                <span>1s</span>
-                <span>45s</span>
+            <div className="space-y-6 border-t pt-6">
+              <div className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  id="isTimed"
+                  checked={isTimed}
+                  onChange={(e) => onTimedChange(e.target.checked)}
+                  className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary"
+                />
+                <Label htmlFor="isTimed" className="cursor-pointer font-medium text-base">
+                  Timed Practice
+                </Label>
               </div>
+
+              {isTimed && (
+                <div className="space-y-4 animate-in slide-in-from-top-2 duration-200">
+                  <Label>Time per Chord: {timePerChord} seconds</Label>
+                  <Slider
+                    value={[timePerChord]}
+                    onValueChange={(value) => onTimeChange(value[0])}
+                    min={1}
+                    max={45}
+                    step={1}
+                    className="w-full"
+                  />
+                  <div className="flex justify-between text-sm text-slate-500">
+                    <span>1s</span>
+                    <span>45s</span>
+                  </div>
+                </div>
+              )}
             </div>
 
             <Button

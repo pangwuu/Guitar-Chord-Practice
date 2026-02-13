@@ -74,6 +74,10 @@ const PATTERNS: Record<string, Pattern[]> = {
   '9': [
     { rootString: 1, frets: ['x', 0, -1, 0, 0, 0], fingers: [null, 2, 1, 3, 3, 3], barre: true },
   ],
+  'min9': [
+    { rootString: 0, frets: [0, 'x', 0, 0, 0, 2], fingers: [1, null, 1, 1, 1, 3], barre: true }, 
+    { rootString: 1, frets: ['x', 0, -1, 0, 1, 'x'], fingers: [null, 2, 1, 3, 4, null] },
+  ],
   '7#9': [
     { rootString: 1, frets: ['x', 0, -1, 0, 1, 'x'], fingers: [null, 2, 1, 3, 4, null] },
   ],
@@ -119,7 +123,10 @@ const generateShapes = (root: string, type: string, inversion: number = 0, targe
   const shapes: GuitarChordShape[] = [];
   
   if (inversion === 0 && OPEN_SHAPES[root]?.[type]) {
-    shapes.push({ ...OPEN_SHAPES[root][type], description: "Open Position", baseFret: 1 });
+    const openShape = OPEN_SHAPES[root][type];
+    // Calculate intervals for open shape
+    const intervals = openShape.frets.map((f, i) => f === 'x' ? -1 : (stringBaseNotes[i] + f - rootIdx + 12) % 12);
+    shapes.push({ ...openShape, description: "Open Position", baseFret: 1, intervals });
   }
 
   const patterns = PATTERNS[type] || [];
@@ -134,9 +141,18 @@ const generateShapes = (root: string, type: string, inversion: number = 0, targe
 
     if (maxFret <= 15 && minFret >= 0 && (maxFret - minFret <= 4)) {
       const rootIndices: number[] = [];
+      const intervals: number[] = [];
+      
       frets.forEach((f, i) => {
-        if (f !== 'x' && (stringBaseNotes[i] + f) % 12 === rootIdx) {
-          rootIndices.push(i);
+        if (f === 'x') {
+          intervals.push(-1);
+        } else {
+          const noteIdx = (stringBaseNotes[i] + f) % 12;
+          const interval = (noteIdx - rootIdx + 12) % 12;
+          intervals.push(interval);
+          if (noteIdx === rootIdx) {
+            rootIndices.push(i);
+          }
         }
       });
 
@@ -146,7 +162,8 @@ const generateShapes = (root: string, type: string, inversion: number = 0, targe
         barre: pattern.barre ? rootFret : undefined,
         baseFret: minFret > 0 ? minFret : 1,
         description: `${SHARP_NOTES[stringBaseNotes[pattern.rootString]]}-Style Barre`,
-        rootIndices
+        rootIndices,
+        intervals
       });
     }
   });
@@ -164,20 +181,11 @@ const generateShapes = (root: string, type: string, inversion: number = 0, targe
       return filtered.map(s => ({ ...s, description: `${s.description} (${inversion === 1 ? '1st' : '2nd'} Inv.)` }));
     }
     
-    // FALLBACK (Avoiding infinite recursion): Call generateShapes with inv=0 but don't fall back again
     const rootShapes = generateShapes(root, type, 0);
     return rootShapes.map(s => ({ ...s, description: `${s.description} (Root Fallback)` }));
   }
 
   return shapes;
-};
-
-const chordFormulas: Record<string, number[]> = {
-  'major': [0, 4, 7], 'minor': [0, 3, 7], 'diminished': [0, 3, 6], 'augmented': [0, 4, 8],
-  'sus2': [0, 2, 7], 'sus4': [0, 5, 7], '5': [0, 7], '6': [0, 4, 7, 9], 'm6': [0, 3, 7, 9],
-  'maj7': [0, 4, 7, 11], 'min7': [0, 3, 7, 10], '7': [0, 4, 7, 10], 'min7b5': [0, 3, 6, 10],
-  'dim7': [0, 3, 6, 9], 'maj9': [0, 4, 7, 11, 14], 'min9': [0, 3, 7, 10, 14], '9': [0, 4, 7, 10, 14],
-  'maj7#11': [0, 4, 7, 11, 18], '13': [0, 4, 7, 10, 14, 21], '7alt': [0, 4, 10, 13], '7#9': [0, 4, 7, 10, 15]
 };
 
 const getNoteAtIntervalInternal = (rootNote: string, semitones: number, useFlats: boolean = false): string => {
@@ -187,6 +195,14 @@ const getNoteAtIntervalInternal = (rootNote: string, semitones: number, useFlats
   const rootIndex = notesSharp.indexOf(normalizedRoot);
   const targetIndex = (rootIndex + semitones) % 12;
   return useFlats ? notesFlat[targetIndex] : notesSharp[targetIndex];
+};
+
+const chordFormulas: Record<string, number[]> = {
+  'major': [0, 4, 7], 'minor': [0, 3, 7], 'diminished': [0, 3, 6], 'augmented': [0, 4, 8],
+  'sus2': [0, 2, 7], 'sus4': [0, 5, 7], '5': [0, 7], '6': [0, 4, 7, 9], 'm6': [0, 3, 7, 9],
+  'maj7': [0, 4, 7, 11], 'min7': [0, 3, 7, 10], '7': [0, 4, 7, 10], 'min7b5': [0, 3, 6, 10],
+  'dim7': [0, 3, 6, 9], 'maj9': [0, 4, 7, 11, 14], 'min9': [0, 3, 7, 10, 14], '9': [0, 4, 7, 10, 14],
+  'maj7#11': [0, 4, 7, 11, 18], '13': [0, 4, 7, 10, 14, 21], '7alt': [0, 4, 10, 13], '7#9': [0, 4, 7, 10, 15]
 };
 
 const buildChord = (root: string, type: string, octave: number = 3, inversion: number = 0): ChordData | null => {
@@ -208,7 +224,7 @@ const buildChord = (root: string, type: string, octave: number = 3, inversion: n
   }
   
   const sortedNotes = [...notes].sort((a, b) => a.frequency - b.frequency);
-  return { notes: sortedNotes, noteNames: notes.map(n => n.name), useFlats };
+  return { notes: sortedNotes, noteNames: notes.map(n => n.name), useFlats, rootNote: root };
 };
 
 const formatChordName = (root: string, type: string): string => {

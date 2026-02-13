@@ -38,6 +38,7 @@ const GuitarChordTrainer: React.FC = () => {
   const [difficulty, setDifficulty] = useState<Difficulty>('beginner');
   const [selectedCustomChords, setSelectedCustomChords] = useState<string[]>([]);
   const [includeInversions, setIncludeInversions] = useState(false);
+  const [isTimed, setIsTimed] = useState(true);
   const [timePerChord, setTimePerChord] = useState(10);
   const [currentChord, setCurrentChord] = useState<Chord | null>(null);
   const [timeRemaining, setTimeRemaining] = useState(0);
@@ -136,18 +137,20 @@ const GuitarChordTrainer: React.FC = () => {
     
     let randomChord = currentChord;
     // Loop until we get a different chord (unless pool size is 1)
-    while (pool.length > 1 && randomChord?.name === currentChord?.name) {
+    while (pool.length > 1 && (randomChord === null || randomChord.name === currentChord?.name)) {
       randomChord = pool[Math.floor(Math.random() * pool.length)];
     }
-    // Fallback if loop was skipped
-    if (!randomChord || (pool.length === 1)) {
+    // Fallback
+    if (!randomChord) {
       randomChord = pool[0];
     }
 
     setCurrentChord(randomChord);
-    setTimeRemaining(timePerChord);
+    if (isTimed) {
+      setTimeRemaining(timePerChord);
+    }
     setTotalChords(prev => prev + 1);
-  }, [chordPool, timePerChord, currentChord]);
+  }, [chordPool, timePerChord, currentChord, isTimed]);
 
   const nextChord = useCallback(() => {
     nextChordFromPool();
@@ -182,13 +185,15 @@ const GuitarChordTrainer: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    if (gameState === 'playing' && timeRemaining > 0) {
-      timerRef.current = setTimeout(() => {
-        setTimeRemaining(prev => prev - 1);
-      }, 1000);
-    } else if (gameState === 'playing' && timeRemaining === 0) {
-      const timeoutId = setTimeout(() => nextChord(), 1000);
-      return () => clearTimeout(timeoutId);
+    if (gameState === 'playing' && isTimed) {
+      if (timeRemaining > 0) {
+        timerRef.current = setTimeout(() => {
+          setTimeRemaining(prev => prev - 1);
+        }, 1000);
+      } else if (timeRemaining === 0) {
+        const timeoutId = setTimeout(() => nextChord(), 1000);
+        return () => clearTimeout(timeoutId);
+      }
     }
     
     return () => {
@@ -196,7 +201,7 @@ const GuitarChordTrainer: React.FC = () => {
         clearTimeout(timerRef.current);
       }
     };
-  }, [timeRemaining, gameState, nextChord]);
+  }, [timeRemaining, gameState, nextChord, isTimed]);
 
   if (gameState === 'setup') {
     return (
@@ -217,6 +222,8 @@ const GuitarChordTrainer: React.FC = () => {
         onCustomChordsChange={setSelectedCustomChords}
         includeInversions={includeInversions}
         onIncludeInversionsChange={setIncludeInversions}
+        isTimed={isTimed}
+        onTimedChange={setIsTimed}
         timePerChord={timePerChord}
         onTimeChange={setTimePerChord}
         onStartGame={startGame}
@@ -234,6 +241,7 @@ const GuitarChordTrainer: React.FC = () => {
       setShowDiagram={setShowDiagram}
       resetGame={resetGame}
       currentChord={currentChord}
+      isTimed={isTimed}
       timeRemaining={timeRemaining}
       timePerChord={timePerChord}
       isPlaying={isPlaying}

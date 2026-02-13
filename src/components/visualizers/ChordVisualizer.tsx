@@ -23,7 +23,12 @@ const ChordVisualizer: React.FC<ChordVisualizerProps> = ({ chord, instrument }) 
   return (
     <div className="w-full flex justify-center py-4">
       {isPiano ? (
-        <PianoVisualizer notes={chord.notes} chordName={chord.name} useFlats={chord.useFlats} />
+        <PianoVisualizer 
+          notes={chord.notes} 
+          chordName={chord.name} 
+          useFlats={chord.useFlats} 
+          rootNote={chord.rootNote}
+        />
       ) : (
         chord.guitarShapes && chord.guitarShapes.length > 0 ? (
           <FretboardVisualizer 

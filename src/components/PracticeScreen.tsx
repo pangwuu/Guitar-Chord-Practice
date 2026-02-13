@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Chord } from '../types';
 import ChordVisualizer from './visualizers/ChordVisualizer';
+import { INTERVAL_COLORS, getInterval } from '../constants';
 
 interface PracticeScreenProps {
   score: number;
@@ -15,6 +16,7 @@ interface PracticeScreenProps {
   setShowDiagram: (show: boolean) => void;
   resetGame: () => void;
   currentChord: Chord | null;
+  isTimed: boolean;
   timeRemaining: number;
   timePerChord: number;
   isPlaying: boolean;
@@ -34,6 +36,7 @@ const PracticeScreen: React.FC<PracticeScreenProps> = ({
   setShowDiagram,
   resetGame,
   currentChord,
+  isTimed,
   timeRemaining,
   timePerChord,
   isPlaying,
@@ -99,24 +102,31 @@ const PracticeScreen: React.FC<PracticeScreenProps> = ({
                 <div className="mb-6 md:mb-8 mt-8">
                   <div className="text-sm text-slate-500 dark:text-slate-400 mb-2">Notes:</div>
                   <div className="flex flex-wrap justify-center gap-2">
-                    {currentChord.noteNames.map((note, i) => (
-                      <span
-                        key={i}
-                        className="px-4 py-2 bg-slate-200 dark:bg-slate-700 text-slate-900 dark:text-white rounded-lg font-mono text-lg"
-                      >
-                        {note}
-                      </span>
-                    ))}
+                    {currentChord.noteNames.map((note, i) => {
+                      const interval = getInterval(note, currentChord.rootNote);
+                      const color = interval !== -1 ? INTERVAL_COLORS[interval] : undefined;
+                      return (
+                        <span
+                          key={i}
+                          style={color ? { backgroundColor: color, color: 'white' } : {}}
+                          className={`px-4 py-2 ${!color ? 'bg-slate-200 dark:bg-slate-700 text-slate-900 dark:text-white' : ''} rounded-lg font-mono text-lg shadow-sm`}
+                        >
+                          {note}
+                        </span>
+                      );
+                    })}
                   </div>
                 </div>
               )}
               
-              <div className="mb-6 md:mb-8 mt-8">
-                <div className="text-4xl md:text-6xl font-bold text-slate-900 dark:text-white mb-4">
-                  {timeRemaining}
+              {isTimed && (
+                <div className="mb-6 md:mb-8 mt-8 animate-in fade-in duration-300">
+                  <div className="text-4xl md:text-6xl font-bold text-slate-900 dark:text-white mb-4">
+                    {timeRemaining}
+                  </div>
+                  <Progress value={progressPercentage} className="h-3 max-w-md mx-auto" />
                 </div>
-                <Progress value={progressPercentage} className="h-3 max-w-md mx-auto" />
-              </div>
+              )}
             </div>
 
             <div className="space-y-3 max-w-2xl mx-auto">
@@ -163,7 +173,7 @@ const PracticeScreen: React.FC<PracticeScreenProps> = ({
               <li>A chord name appears with a visual diagram</li>
               <li>Try to play it on your instrument</li>
               <li>Click "Show Notes" if you need a hint about the specific notes</li>
-              <li>Click "Play Chord Sound" to hear what it should sound like</li>
+              <li>Click "Play Chord Sound" to hear what it should look like</li>
               <li>Compare it with what you played - were you right?</li>
               <li>Click "I Got It!" if you played it correctly, or "Skip" to move on</li>
             </ol>

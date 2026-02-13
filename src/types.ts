@@ -15,12 +15,14 @@ export interface GuitarChordShape {
   baseFret?: number; 
   description?: string; 
   rootIndices?: number[]; // indices in the frets array that are root notes
+  intervals?: number[]; // semitone interval from root (0-11) for each string
 }
 
 export interface ChordData {
   notes: Note[];
   noteNames: string[];
   useFlats?: boolean;
+  rootNote: string; // The canonical root name (e.g. "C#")
 }
 
 export interface Chord extends ChordData {

@@ -2,6 +2,7 @@ import React from 'react';
 import { GuitarChordShape } from '../../types';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '../ui/button';
+import { INTERVAL_COLORS, INTERVAL_LABELS } from '../../constants';
 
 interface FretboardVisualizerProps {
   shapes: GuitarChordShape[];
@@ -43,6 +44,11 @@ const FretboardVisualizer: React.FC<FretboardVisualizerProps> = ({
   const nextShape = () => onIndexChange((activeIndex + 1) % shapes.length);
   const prevShape = () => onIndexChange((activeIndex - 1 + shapes.length) % shapes.length);
 
+  // Get unique intervals present in this shape for the legend
+  const uniqueIntervals = shape.intervals 
+    ? Array.from(new Set(shape.intervals.filter(i => i !== -1))).sort((a, b) => a - b)
+    : [];
+
   return (
     <div className="flex flex-col items-center justify-center p-4 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
       <div className="flex items-center justify-between w-full mb-2">
@@ -72,94 +78,117 @@ const FretboardVisualizer: React.FC<FretboardVisualizerProps> = ({
         </Button>
       </div>
 
-      <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`} className="overflow-visible">
-        {/* Nut/Top line */}
-        <line
-          x1={margin.left} y1={margin.top}
-          x2={margin.left + innerWidth} y2={margin.top}
-          stroke={isNutVisible ? "currentColor" : "#94a3b8"}
-          strokeWidth={isNutVisible ? 8 : 2}
-          className="text-slate-900 dark:text-slate-200"
-        />
-
-        {/* Frets */}
-        {Array.from({ length: numFrets }).map((_, i) => (
+      <div className="flex flex-col md:flex-row items-center gap-6">
+        <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`} className="overflow-visible">
+          {/* Nut/Top line */}
           <line
-            key={`fret-${i}`}
-            x1={margin.left} y1={margin.top + (i + 1) * fretSpacing}
-            x2={margin.left + innerWidth} y2={margin.top + (i + 1) * fretSpacing}
-            stroke="#94a3b8" strokeWidth={2}
+            x1={margin.left} y1={margin.top}
+            x2={margin.left + innerWidth} y2={margin.top}
+            stroke={isNutVisible ? "currentColor" : "#94a3b8"}
+            strokeWidth={isNutVisible ? 8 : 2}
+            className="text-slate-900 dark:text-slate-200"
           />
-        ))}
 
-        {/* Strings */}
-        {Array.from({ length: numStrings }).map((_, i) => (
-          <line
-            key={`string-${i}`}
-            x1={getStringX(i)} y1={margin.top}
-            x2={getStringX(i)} y2={margin.top + innerHeight}
-            stroke="#64748b" strokeWidth={1 + i * 0.5}
-          />
-        ))}
+          {/* Frets */}
+          {Array.from({ length: numFrets }).map((_, i) => (
+            <line
+              key={`fret-${i}`}
+              x1={margin.left} y1={margin.top + (i + 1) * fretSpacing}
+              x2={margin.left + innerWidth} y2={margin.top + (i + 1) * fretSpacing}
+              stroke="#94a3b8" strokeWidth={2}
+            />
+          ))}
 
-        {/* Markers */}
-        {shape.frets.map((fret, stringIndex) => {
-          if (fret === 'x') {
-            return <text key={stringIndex} x={getStringX(stringIndex)} y={margin.top - 15} textAnchor="middle" fontSize="14" fontWeight="bold" className="fill-slate-400">×</text>;
-          }
-          if (fret === 0) {
-            const isRoot = shape.rootIndices?.includes(stringIndex);
-            return <circle key={stringIndex} cx={getStringX(stringIndex)} cy={margin.top - 15} r="5" fill="none" stroke={isRoot ? "#ef4444" : "currentColor"} strokeWidth="2" className={isRoot ? "" : "text-slate-400"} />;
-          }
-          const finger = shape.fingers ? shape.fingers[stringIndex] : null;
-          const isRoot = shape.rootIndices?.includes(stringIndex);
-          return (
-            <g key={stringIndex}>
-              <circle 
-                cx={getStringX(stringIndex)} 
-                cy={getFretY(fret) - fretSpacing / 2} 
-                r="12" 
-                className={isRoot ? "fill-red-500" : "fill-indigo-600 dark:fill-indigo-500"} 
-              />
-              {finger && <text x={getStringX(stringIndex)} y={getFretY(fret) - fretSpacing / 2} dy="0.35em" textAnchor="middle" fontSize="12" fontWeight="bold" fill="white">{finger}</text>}
-            </g>
-          );
-        })}
+          {/* Strings */}
+          {Array.from({ length: numStrings }).map((_, i) => (
+            <line
+              key={`string-${i}`}
+              x1={getStringX(i)} y1={margin.top}
+              x2={getStringX(i)} y2={margin.top + innerHeight}
+              stroke="#64748b" strokeWidth={1 + i * 0.5}
+            />
+          ))}
 
-        {/* Barre */}
-        {shape.barre && (() => {
-          const barredStringIndices = shape.frets
-            .map((f, i) => f === shape.barre ? i : -1)
-            .filter(i => i !== -1);
-          
-          if (barredStringIndices.length > 1) {
-            const firstBarred = Math.min(...barredStringIndices);
-            const lastBarred = Math.max(...barredStringIndices);
-            const xStart = getStringX(firstBarred) - 12;
-            const xEnd = getStringX(lastBarred) + 12;
-            const barreWidth = xEnd - xStart;
-
+          {/* Markers */}
+          {shape.frets.map((fret, stringIndex) => {
+            if (fret === 'x') {
+              return <text key={stringIndex} x={getStringX(stringIndex)} y={margin.top - 15} textAnchor="middle" fontSize="14" fontWeight="bold" className="fill-slate-400">×</text>;
+            }
+            
+            const interval = shape.intervals ? shape.intervals[stringIndex] : -1;
+            const color = interval !== -1 ? INTERVAL_COLORS[interval] : "currentColor";
+            
+            if (fret === 0) {
+              return <circle key={stringIndex} cx={getStringX(stringIndex)} cy={margin.top - 15} r="5" fill="none" stroke={color} strokeWidth="2" />;
+            }
+            
+            const finger = shape.fingers ? shape.fingers[stringIndex] : null;
             return (
-              <rect
-                x={xStart}
-                y={getFretY(shape.barre) - fretSpacing / 2 - 12}
-                width={barreWidth}
-                height={24}
-                rx={12}
-                className="fill-indigo-600/30 dark:fill-indigo-500/30 pointer-events-none"
-              />
+              <g key={stringIndex}>
+                <circle 
+                  cx={getStringX(stringIndex)} 
+                  cy={getFretY(fret) - fretSpacing / 2} 
+                  r="12" 
+                  fill={color}
+                />
+                {finger && <text x={getStringX(stringIndex)} y={getFretY(fret) - fretSpacing / 2} dy="0.35em" textAnchor="middle" fontSize="12" fontWeight="bold" fill="white">{finger}</text>}
+              </g>
             );
-          }
-          return null;
-        })()}
+          })}
 
-        {/* Fret Label */}
-        {!isNutVisible && (
-          <text x={margin.left - 10} y={margin.top + fretSpacing / 2} textAnchor="end" dy="0.35em" fontSize="12" fontWeight="bold" className="fill-slate-500">
-            {baseFret}fr
-          </text>
-        )}
-      </svg>
+          {/* Barre */}
+          {shape.barre && (() => {
+            const barredStringIndices = shape.frets
+              .map((f, i) => f === shape.barre ? i : -1)
+              .filter(i => i !== -1);
+            
+            if (barredStringIndices.length > 1) {
+              const firstBarred = Math.min(...barredStringIndices);
+              const lastBarred = Math.max(...barredStringIndices);
+              const xStart = getStringX(firstBarred) - 12;
+              const xEnd = getStringX(lastBarred) + 12;
+              const barreWidth = xEnd - xStart;
+
+              return (
+                <rect
+                  x={xStart}
+                  y={getFretY(shape.barre) - fretSpacing / 2 - 12}
+                  width={barreWidth}
+                  height={24}
+                  rx={12}
+                  className="fill-slate-400/20 dark:fill-slate-500/20 pointer-events-none"
+                />
+              );
+            }
+            return null;
+          })()}
+
+          {/* Fret Label */}
+          {!isNutVisible && (
+            <text x={margin.left - 10} y={margin.top + fretSpacing / 2} textAnchor="end" dy="0.35em" fontSize="12" fontWeight="bold" className="fill-slate-500">
+              {baseFret}fr
+            </text>
+          )}
+        </svg>
+
+        {/* Legend */}
+        <div className="flex flex-col gap-2 p-3 bg-slate-50 dark:bg-slate-800/50 rounded-lg border border-slate-100 dark:border-slate-800">
+          <div className="text-[10px] uppercase tracking-wider font-bold text-slate-400 mb-1">Scale Degrees</div>
+          <div className="grid grid-cols-2 gap-x-4 gap-y-1.5">
+            {uniqueIntervals.map(interval => (
+              <div key={interval} className="flex items-center gap-2">
+                <div 
+                  className="w-3 h-3 rounded-full" 
+                  style={{ backgroundColor: INTERVAL_COLORS[interval] }}
+                />
+                <span className="text-xs font-medium text-slate-600 dark:text-slate-300">
+                  {INTERVAL_LABELS[interval]}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
       
       {shapes.length > 1 && (
         <div className="flex gap-1 mt-4">
