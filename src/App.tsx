@@ -50,6 +50,7 @@ const GuitarChordTrainer: React.FC = () => {
   const [chordPool, setChordPool] = useState<Chord[]>([]);
   const [instrument, setInstrument] = useState<string>('acoustic');
   const [isInstrumentLoading, setIsInstrumentLoading] = useState(true);
+  const [isLeftHanded, setIsLeftHanded] = useState(false);
   
   const samplerRef = useRef<Tone.Sampler | null>(null);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -61,6 +62,25 @@ const GuitarChordTrainer: React.FC = () => {
     } else {
       setIncludeInversions(false);
     }
+  }, []);
+
+  useEffect(() => {
+    const unlockAudio = async () => {
+      if (Tone.context.state !== 'running') {
+        await Tone.start();
+        console.log("Audio context unlocked");
+      }
+      window.removeEventListener('click', unlockAudio);
+      window.removeEventListener('touchstart', unlockAudio);
+    };
+
+    window.addEventListener('click', unlockAudio);
+    window.addEventListener('touchstart', unlockAudio);
+
+    return () => {
+      window.removeEventListener('click', unlockAudio);
+      window.removeEventListener('touchstart', unlockAudio);
+    };
   }, []);
 
   useEffect(() => {
@@ -227,6 +247,8 @@ const GuitarChordTrainer: React.FC = () => {
         timePerChord={timePerChord}
         onTimeChange={setTimePerChord}
         onStartGame={startGame}
+        isLeftHanded={isLeftHanded}
+        onLeftHandedChange={setIsLeftHanded}
       />
     );
   }
@@ -250,6 +272,7 @@ const GuitarChordTrainer: React.FC = () => {
       markCorrect={markCorrect}
       nextChord={nextChord}
       instrument={instrument}
+      isLeftHanded={isLeftHanded}
     />
   );
 };

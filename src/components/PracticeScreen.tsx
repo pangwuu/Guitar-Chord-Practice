@@ -25,6 +25,7 @@ interface PracticeScreenProps {
   markCorrect: () => void;
   nextChord: () => void;
   instrument: string;
+  isLeftHanded: boolean;
 }
 
 const PracticeScreen: React.FC<PracticeScreenProps> = ({
@@ -45,6 +46,7 @@ const PracticeScreen: React.FC<PracticeScreenProps> = ({
   markCorrect,
   nextChord,
   instrument,
+  isLeftHanded,
 }) => {
   const progressPercentage = (timeRemaining / timePerChord) * 100;
 
@@ -94,7 +96,7 @@ const PracticeScreen: React.FC<PracticeScreenProps> = ({
 
               {showDiagram && (
                 <div className="animate-in fade-in zoom-in duration-300">
-                  <ChordVisualizer chord={currentChord} instrument={instrument} />
+                  <ChordVisualizer chord={currentChord} instrument={instrument} isLeftHanded={isLeftHanded} />
                 </div>
               )}
               

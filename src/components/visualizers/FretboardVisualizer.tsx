@@ -9,13 +9,15 @@ interface FretboardVisualizerProps {
   activeIndex: number;
   onIndexChange: (index: number) => void;
   chordName: string;
+  isLeftHanded?: boolean;
 }
 
 const FretboardVisualizer: React.FC<FretboardVisualizerProps> = ({ 
   shapes, 
   activeIndex, 
   onIndexChange, 
-  chordName 
+  chordName,
+  isLeftHanded = false
 }) => {
   const shape = shapes[activeIndex];
   if (!shape) return null;
@@ -35,7 +37,11 @@ const FretboardVisualizer: React.FC<FretboardVisualizerProps> = ({
   const baseFret = shape.baseFret || 1;
   const isNutVisible = baseFret === 1;
 
-  const getStringX = (s: number) => margin.left + s * stringSpacing;
+  const getStringX = (s: number) => {
+    const stringPos = isLeftHanded ? (numStrings - 1 - s) : s;
+    return margin.left + stringPos * stringSpacing;
+  };
+  
   const getFretY = (f: number | 'x') => {
     if (f === 'x') return 0;
     return margin.top + (f - baseFret + 1) * fretSpacing;
@@ -62,7 +68,7 @@ const FretboardVisualizer: React.FC<FretboardVisualizerProps> = ({
           <ChevronLeft className="h-4 w-4" />
         </Button>
         <div className="text-center">
-          <h3 className="text-lg font-bold text-slate-900 dark:text-white leading-tight">{chordName}</h3>
+          {/* <h3 className="text-lg font-bold text-slate-900 dark:text-white leading-tight">{chordName}</h3> */}
           <p className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold">
             {/* {shape.description || `Shape ${activeIndex + 1}`} */}
           </p>
@@ -99,16 +105,15 @@ const FretboardVisualizer: React.FC<FretboardVisualizerProps> = ({
             />
           ))}
 
-          {/* Strings */}
-          {Array.from({ length: numStrings }).map((_, i) => (
-            <line
-              key={`string-${i}`}
-              x1={getStringX(i)} y1={margin.top}
-              x2={getStringX(i)} y2={margin.top + innerHeight}
-              stroke="#64748b" strokeWidth={1 + i * 0.5}
-            />
-          ))}
-
+                  {/* Strings */}
+                  {Array.from({ length: numStrings }).map((_, i) => (
+                    <line
+                      key={`string-${i}`}
+                      x1={getStringX(i)} y1={margin.top}
+                      x2={getStringX(i)} y2={margin.top + innerHeight}
+                      stroke="#64748b" strokeWidth={1 + (numStrings - 1 - i) * 0.5}
+                    />
+                  ))}
           {/* Markers */}
           {shape.frets.map((fret, stringIndex) => {
             if (fret === 'x') {
@@ -143,10 +148,9 @@ const FretboardVisualizer: React.FC<FretboardVisualizerProps> = ({
               .filter(i => i !== -1);
             
             if (barredStringIndices.length > 1) {
-              const firstBarred = Math.min(...barredStringIndices);
-              const lastBarred = Math.max(...barredStringIndices);
-              const xStart = getStringX(firstBarred) - 12;
-              const xEnd = getStringX(lastBarred) + 12;
+              const xCoords = barredStringIndices.map(i => getStringX(i));
+              const xStart = Math.min(...xCoords) - 12;
+              const xEnd = Math.max(...xCoords) + 12;
               const barreWidth = xEnd - xStart;
 
               return (
@@ -165,7 +169,7 @@ const FretboardVisualizer: React.FC<FretboardVisualizerProps> = ({
 
           {/* Fret Label */}
           {!isNutVisible && (
-            <text x={margin.left - 10} y={margin.top + fretSpacing / 2} textAnchor="end" dy="0.35em" fontSize="12" fontWeight="bold" className="fill-slate-500">
+            <text x={isLeftHanded ? margin.left + innerWidth + 10 : margin.left - 10} y={margin.top + fretSpacing / 2} textAnchor={isLeftHanded ? "start" : "end"} dy="0.35em" fontSize="12" fontWeight="bold" className="fill-slate-500">
               {baseFret}fr
             </text>
           )}

@@ -6,9 +6,10 @@ import PianoVisualizer from './PianoVisualizer';
 interface ChordVisualizerProps {
   chord: Chord | null;
   instrument: string;
+  isLeftHanded?: boolean;
 }
 
-const ChordVisualizer: React.FC<ChordVisualizerProps> = ({ chord, instrument }) => {
+const ChordVisualizer: React.FC<ChordVisualizerProps> = ({ chord, instrument, isLeftHanded }) => {
   const [activeShapeIdx, setActiveShapeIdx] = useState(0);
 
   // Reset index when chord changes
@@ -36,6 +37,7 @@ const ChordVisualizer: React.FC<ChordVisualizerProps> = ({ chord, instrument }) 
             activeIndex={activeShapeIdx}
             onIndexChange={setActiveShapeIdx}
             chordName={chord.name} 
+            isLeftHanded={isLeftHanded}
           />
         ) : (
           <div className="text-center p-8 border border-dashed border-slate-300 dark:border-slate-700 rounded-xl text-slate-500">

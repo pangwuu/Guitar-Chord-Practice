@@ -24,6 +24,8 @@ interface SetupScreenProps {
   timePerChord: number;
   onTimeChange: (value: number) => void;
   onStartGame: () => void;
+  isLeftHanded: boolean;
+  onLeftHandedChange: (value: boolean) => void;
 }
 
 const SetupScreen: React.FC<SetupScreenProps> = ({
@@ -43,6 +45,8 @@ const SetupScreen: React.FC<SetupScreenProps> = ({
   timePerChord,
   onTimeChange,
   onStartGame,
+  isLeftHanded,
+  onLeftHandedChange,
 }) => {
   const toggleChord = (type: string) => {
     if (selectedCustomChords.includes(type)) {
@@ -88,6 +92,20 @@ const SetupScreen: React.FC<SetupScreenProps> = ({
                   </Button>
                 ))}
               </div>
+              {selectedInstrument !== 'piano' && (
+                <div className="flex items-center space-x-2 mt-4">
+                  <input
+                    type="checkbox"
+                    id="isLeftHanded"
+                    checked={isLeftHanded}
+                    onChange={(e) => onLeftHandedChange(e.target.checked)}
+                    className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary"
+                  />
+                  <Label htmlFor="isLeftHanded" className="cursor-pointer font-medium">
+                    Left-Handed Fretboard
+                  </Label>
+                </div>
+              )}
               {isInstrumentLoading && (
                 <p className="text-sm text-amber-600 animate-pulse">
                   Loading instrument samples...
