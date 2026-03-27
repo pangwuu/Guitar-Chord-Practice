@@ -1,3 +1,4 @@
+import { TheoryProvider } from './context/TheoryContext';
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Music, Guitar, Zap } from 'lucide-react';
 import { generateChordSet } from './chordGenerator';
@@ -277,4 +278,12 @@ const GuitarChordTrainer: React.FC = () => {
   );
 };
 
-export default GuitarChordTrainer;
+function App() {
+  return (
+    <TheoryProvider>
+      <GuitarChordTrainer />
+    </TheoryProvider>
+  );
+}
+
+export default App;
