@@ -37,7 +37,7 @@ export interface Instrument {
   baseUrl: string;
 }
 
-export type GameState = 'setup' | 'playing';
+export type GameState = 'setup' | 'playing' | 'workbench';
 
 export interface DifficultyOption {
   value: Difficulty;
