@@ -1,10 +1,22 @@
 import { TheoryProvider } from './context/TheoryContext';
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Music, Guitar, Zap } from 'lucide-react';
+import { Music, Guitar, Zap, LayoutPanelLeft, Search, Grid3X3, GraduationCap, PlayCircle } from 'lucide-react';
 import { generateChordSet } from './chordGenerator';
 import * as Tone from 'tone';
 import SetupScreen from './components/SetupScreen';
 import PracticeScreen from './components/PracticeScreen';
+import TheoryDashboard from './components/theory/TheoryDashboard';
+import Sidebar, { ViewId } from './components/layout/Sidebar';
+import PlaceholderView from './components/views/PlaceholderView';
+import CAGEDExplorer from './components/views/CAGEDExplorer';
+import SongAnalyzer from './components/views/SongAnalyzer';
+import ProgressionPlayer from './components/views/ProgressionPlayer';
+import LearningPathView from './components/views/LearningPathView';
+import FingerPlacementGuide from './components/views/FingerPlacementGuide';
+import TransitionTrainer from './components/views/TransitionTrainer';
+import SongImportView from './components/views/SongImportView';
+import OnboardingTutorial from './components/layout/OnboardingTutorial';
+import { Button } from './components/ui/button';
 import { Instrument, GameState, DifficultyOption, Chord, Difficulty } from './types';
 
 const INSTRUMENTS: Record<string, Instrument> = {
@@ -35,6 +47,21 @@ const DIFFICULTY_OPTIONS: DifficultyOption[] = [
 ];
 
 const GuitarChordTrainer: React.FC = () => {
+  const [activeView, setActiveView] = useState<ViewId>('practice');
+  const [showTutorial, setShowTutorial] = useState(false);
+
+  useEffect(() => {
+    const hasSeenTutorial = localStorage.getItem('fretboard-pro-tutorial-seen');
+    if (!hasSeenTutorial) {
+      setShowTutorial(true);
+    }
+  }, []);
+
+  const handleTutorialComplete = () => {
+    localStorage.setItem('fretboard-pro-tutorial-seen', 'true');
+    setShowTutorial(false);
+  };
+
   const [gameState, setGameState] = useState<GameState>('setup');
   const [difficulty, setDifficulty] = useState<Difficulty>('beginner');
   const [selectedCustomChords, setSelectedCustomChords] = useState<string[]>([]);
@@ -127,19 +154,15 @@ const GuitarChordTrainer: React.FC = () => {
     if (!currentChord || isPlaying || !samplerRef.current) return;
     
     try {
-      // Ensure Audio Context is started (browser policy)
       if (Tone.context.state !== 'running') {
         await Tone.start();
       }
 
       setIsPlaying(true);
-      
       const now = Tone.now();
       const duration = 2.0;
-      
       const notesToPlay = currentChord.notes.map(n => n.pitch);
       
-      // Strum effect: slight delay between notes
       notesToPlay.forEach((note, index) => {
         samplerRef.current?.triggerAttackRelease(note, duration, now + index * 0.05);
       });
@@ -155,17 +178,13 @@ const GuitarChordTrainer: React.FC = () => {
 
   const nextChordFromPool = useCallback((pool: Chord[] = chordPool) => {
     if (pool.length === 0) return;
-    
     let randomChord = currentChord;
-    // Loop until we get a different chord (unless pool size is 1)
     while (pool.length > 1 && (randomChord === null || randomChord.name === currentChord?.name)) {
       randomChord = pool[Math.floor(Math.random() * pool.length)];
     }
-    // Fallback
     if (!randomChord) {
       randomChord = pool[0];
     }
-
     setCurrentChord(randomChord);
     if (isTimed) {
       setTimeRemaining(timePerChord);
@@ -178,11 +197,9 @@ const GuitarChordTrainer: React.FC = () => {
   }, [nextChordFromPool]);
 
   const startGame = useCallback(async () => {
-    // Ensure audio context is started on user interaction
     if (Tone.context.state !== 'running') {
       await Tone.start();
     }
-    
     const chords = generateChordSet(difficulty, selectedCustomChords, includeInversions);
     setChordPool(chords);
     setGameState('playing');
@@ -206,7 +223,7 @@ const GuitarChordTrainer: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    if (gameState === 'playing' && isTimed) {
+    if (gameState === 'playing' && isTimed && activeView === 'practice') {
       if (timeRemaining > 0) {
         timerRef.current = setTimeout(() => {
           setTimeRemaining(prev => prev - 1);
@@ -222,59 +239,91 @@ const GuitarChordTrainer: React.FC = () => {
         clearTimeout(timerRef.current);
       }
     };
-  }, [timeRemaining, gameState, nextChord, isTimed]);
+  }, [timeRemaining, gameState, nextChord, isTimed, activeView]);
 
-  if (gameState === 'setup') {
-    return (
-      <SetupScreen 
-        instruments={INSTRUMENTS}
-        selectedInstrument={instrument}
-        onInstrumentChange={(key) => {
-          if (instrument !== key) {
-            setIsInstrumentLoading(true);
-            setInstrument(key);
-          }
-        }}
-        isInstrumentLoading={isInstrumentLoading}
-        difficulty={difficulty}
-        onDifficultyChange={handleDifficultyChange}
-        difficultyOptions={DIFFICULTY_OPTIONS}
-        selectedCustomChords={selectedCustomChords}
-        onCustomChordsChange={setSelectedCustomChords}
-        includeInversions={includeInversions}
-        onIncludeInversionsChange={setIncludeInversions}
-        isTimed={isTimed}
-        onTimedChange={setIsTimed}
-        timePerChord={timePerChord}
-        onTimeChange={setTimePerChord}
-        onStartGame={startGame}
-        isLeftHanded={isLeftHanded}
-        onLeftHandedChange={setIsLeftHanded}
-      />
-    );
-  }
+  const renderView = () => {
+    switch (activeView) {
+      case 'practice':
+        if (gameState === 'setup') {
+          return (
+            <SetupScreen 
+              instruments={INSTRUMENTS}
+              selectedInstrument={instrument}
+              onInstrumentChange={(key) => {
+                if (instrument !== key) {
+                  setIsInstrumentLoading(true);
+                  setInstrument(key);
+                }
+              }}
+              isInstrumentLoading={isInstrumentLoading}
+              difficulty={difficulty}
+              onDifficultyChange={handleDifficultyChange}
+              difficultyOptions={DIFFICULTY_OPTIONS}
+              selectedCustomChords={selectedCustomChords}
+              onCustomChordsChange={setSelectedCustomChords}
+              includeInversions={includeInversions}
+              onIncludeInversionsChange={setIncludeInversions}
+              isTimed={isTimed}
+              onTimedChange={setIsTimed}
+              timePerChord={timePerChord}
+              onTimeChange={setTimePerChord}
+              onStartGame={startGame}
+              isLeftHanded={isLeftHanded}
+              onLeftHandedChange={setIsLeftHanded}
+            />
+          );
+        }
+        return (
+          <PracticeScreen 
+            score={score}
+            totalChords={totalChords}
+            showNotes={showNotes}
+            setShowNotes={setShowNotes}
+            showDiagram={showDiagram}
+            setShowDiagram={setShowDiagram}
+            resetGame={resetGame}
+            currentChord={currentChord}
+            isTimed={isTimed}
+            timeRemaining={timeRemaining}
+            timePerChord={timePerChord}
+            isPlaying={isPlaying}
+            isInstrumentLoading={isInstrumentLoading}
+            playChord={playChord}
+            markCorrect={markCorrect}
+            nextChord={nextChord}
+            instrument={instrument}
+            isLeftHanded={isLeftHanded}
+          />
+        );
+      case 'workbench':
+        return <TheoryDashboard />;
+      case 'fingering':
+        return <FingerPlacementGuide />;
+      case 'transition':
+        return <TransitionTrainer />;
+      case 'analyzer':
+        return <SongAnalyzer />;
+      case 'import':
+        return <SongImportView onAnalyze={() => setActiveView('analyzer')} />;
+      case 'caged':
+        return <CAGEDExplorer />;
+      case 'playback':
+        return <ProgressionPlayer />;
+      case 'learning':
+        return <LearningPathView />;
+      default:
+        return <TheoryDashboard />;
+    }
+  };
 
   return (
-    <PracticeScreen 
-      score={score}
-      totalChords={totalChords}
-      showNotes={showNotes}
-      setShowNotes={setShowNotes}
-      showDiagram={showDiagram}
-      setShowDiagram={setShowDiagram}
-      resetGame={resetGame}
-      currentChord={currentChord}
-      isTimed={isTimed}
-      timeRemaining={timeRemaining}
-      timePerChord={timePerChord}
-      isPlaying={isPlaying}
-      isInstrumentLoading={isInstrumentLoading}
-      playChord={playChord}
-      markCorrect={markCorrect}
-      nextChord={nextChord}
-      instrument={instrument}
-      isLeftHanded={isLeftHanded}
-    />
+    <div className="flex min-h-screen bg-slate-50 dark:bg-slate-950">
+      {showTutorial && <OnboardingTutorial onComplete={handleTutorialComplete} />}
+      <Sidebar activeView={activeView} onViewChange={setActiveView} />
+      <main className="flex-1 overflow-y-auto h-screen custom-scrollbar pt-12 md:pt-0">
+        {renderView()}
+      </main>
+    </div>
   );
 };
 

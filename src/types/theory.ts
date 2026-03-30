@@ -381,14 +381,21 @@ export interface FretboardPosition {
 // ---------------------------------------------------------------------------
 
 /**
- * Guitar tuning defined by the open string notes.
- * Strings are ordered from lowest pitch (thickest) to highest pitch (thinnest).
+ * Playback configuration options.
  */
-export interface Tuning {
-  /** Display name (e.g. "Standard", "Drop D") */
-  name: string;
-  /** Open string notes, lowest to highest pitch */
-  strings: Note[];
+export interface PlaybackOptions {
+  bpm: number;
+  mode: 'strum' | 'arpeggio' | 'scale_ascending' | 'scale_descending';
+  instrument: 'acoustic' | 'electric_clean' | 'piano';
+}
+
+/**
+ * Current playback state.
+ */
+export interface PlaybackState {
+  isPlaying: boolean;
+  activeNoteIndex: number | null;
+  progress: number; // 0 to 1
 }
 
 /**
@@ -652,8 +659,33 @@ export interface HarmonicAnalysis {
 }
 
 // ---------------------------------------------------------------------------
-// Song Import
+// Learning Path
 // ---------------------------------------------------------------------------
+
+export type ModuleStatus = 'locked' | 'available' | 'completed';
+
+export interface LearningModule {
+  id: string;
+  title: string;
+  description: string;
+  difficulty: 'beginner' | 'intermediate' | 'advanced';
+  category: 'chords' | 'scales' | 'theory' | 'technique';
+  prerequisites: string[]; // IDs of required modules
+  estimatedTime: string;
+  status: ModuleStatus;
+  content?: {
+    text: string;
+    targetChords?: string[];
+    targetScale?: { root: NoteName; type: ScaleType };
+  };
+}
+
+export interface LearningPath {
+  id: string;
+  name: string;
+  description: string;
+  modules: LearningModule[];
+}
 
 /**
  * Source of chord data for an imported song.

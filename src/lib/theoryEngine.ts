@@ -746,12 +746,12 @@ function findBestVoicing(
 // ---------------------------------------------------------------------------
 
 /** Base open chord shapes for CAGED (frets relative to nut). */
-const CAGED_BASE_SHAPES: Record<CAGEDShapeName, { frets: (number | null)[]; rootString: number }> = {
-  C: { frets: [null, 3, 2, 0, 1, 0], rootString: 1 },
-  A: { frets: [null, 0, 2, 2, 2, 0], rootString: 1 },
-  G: { frets: [3, 2, 0, 0, 0, 3], rootString: 0 },
-  E: { frets: [0, 2, 2, 1, 0, 0], rootString: 0 },
-  D: { frets: [null, null, 0, 2, 3, 2], rootString: 2 },
+const CAGED_BASE_SHAPES: Record<CAGEDShapeName, { frets: (number | null)[]; rootString: number; intervals: number[] }> = {
+  C: { frets: [null, 3, 2, 0, 1, 0], rootString: 1, intervals: [null, 0, 4, 7, 0, 4] as any },
+  A: { frets: [null, 0, 2, 2, 2, 0], rootString: 1, intervals: [null, 0, 7, 0, 4, 7] as any },
+  G: { frets: [3, 2, 0, 0, 0, 3], rootString: 0, intervals: [0, 4, 7, 0, 4, 0] as any }, 
+  E: { frets: [0, 2, 2, 1, 0, 0], rootString: 0, intervals: [0, 7, 0, 4, 7, 0] as any },
+  D: { frets: [null, null, 0, 2, 3, 2], rootString: 2, intervals: [null, null, 0, 7, 0, 4] as any },
 };
 
 /**
@@ -764,41 +764,79 @@ export function getCAGEDShapes(
 ): CAGEDShape[] {
   const shapes: CAGEDShape[] = [];
   const chord = getChord(root, quality);
-  const scale = getScale(root, quality === 'minor' ? 'natural_minor' : 'major');
+  
+  const scaleType = (quality.includes('min') || quality === 'diminished' || quality === 'dim7') 
+    ? 'natural_minor' 
+    : 'major';
+  const scale = getScale(root, scaleType);
 
   for (const shapeName of ['C', 'A', 'G', 'E', 'D'] as CAGEDShapeName[]) {
     const base = CAGED_BASE_SHAPES[shapeName];
-    // Calculate how many frets to shift the shape
+    
+    // 1. Find the target root fret on the correct root string for this shape
     const openRootNote = getNoteAtFret(base.rootString, 0, tuning);
-    // The base shape's root note in standard tuning
-    const baseRootSemitones = base.frets[base.rootString] ?? 0;
-    const baseRoot = transposeNote(openRootNote, baseRootSemitones);
-    const shift = intervalBetween(baseRoot, root);
+    let targetRootFret = (noteToIndex(root) - noteToIndex(openRootNote) + 12) % 12;
+    
+    // CAGED shapes usually live in a specific fret window relative to the root
+    // C shape: root is highest fret in window (fret window: root-3 to root)
+    // A shape: root is lowest fret in window (fret window: root to root+3)
+    // G shape: root is highest (fret window: root-4 to root)
+    // E shape: root is lowest (fret window: root to root+3)
+    // D shape: root is lowest (fret window: root to root+3)
+    
+    // Actually, simpler: find a window where the base shape's root string has our target root
+    // and the window is "natural" for that shape.
+    let windowStart = 0;
+    const baseRootFret = base.frets[base.rootString]!;
+    windowStart = targetRootFret - baseRootFret;
+    
+    // Normalize window to be within 0-12 (for first octave exploration)
+    if (windowStart < 0) windowStart += 12;
+    
+    const windowEnd = windowStart + 4;
+    
+    // 2. Build voicing using chord tones in this window
+    const voicingStrings: (number | null)[] = [];
+    for (let s = 0; s < tuning.strings.length; s++) {
+      const targetFret = base.frets[s] !== null ? base.frets[s]! + windowStart : null;
+      
+      if (targetFret !== null) {
+        // Verify this fret actually plays a chord tone. 
+        // If not (e.g. minor 3rd vs major 3rd), find the nearest chord tone in window.
+        const note = getNoteAtFret(s, targetFret, tuning);
+        if (chord.notes.includes(note)) {
+          voicingStrings.push(targetFret);
+        } else {
+          // Try +/- 1 fret within the window
+          if (chord.notes.includes(getNoteAtFret(s, targetFret - 1, tuning))) {
+            voicingStrings.push(targetFret - 1);
+          } else if (chord.notes.includes(getNoteAtFret(s, targetFret + 1, tuning))) {
+            voicingStrings.push(targetFret + 1);
+          } else {
+            voicingStrings.push(null); // No chord tone found for this string in this shape
+          }
+        }
+      } else {
+        voicingStrings.push(null);
+      }
+    }
 
-    // Shift all frets
-    const shiftedFrets = base.frets.map(f => f === null ? null : f + shift);
-    const minFret = Math.min(...shiftedFrets.filter((f): f is number => f !== null));
-    const maxFret = Math.max(...shiftedFrets.filter((f): f is number => f !== null));
-
-    // Build voicing
-    const voicingStrings = shiftedFrets;
-    const voicingFingers: (number | null)[] = shiftedFrets.map(f => {
-      if (f === null) return null;
-      const rel = f - minFret;
-      return rel === 0 ? null : Math.min(rel, 4);
-    });
+    const validFrets = voicingStrings.filter((f): f is number => f !== null);
+    const minFretUsed = validFrets.length > 0 ? Math.min(...validFrets) : windowStart;
+    const maxFretUsed = validFrets.length > 0 ? Math.max(...validFrets) : windowEnd;
 
     const voicing: Voicing = {
       strings: voicingStrings,
-      fingers: voicingFingers,
-      positionStart: Math.max(minFret, 1),
-      barreAt: minFret > 0 ? minFret : undefined,
+      fingers: voicingStrings.map(f => f === null ? null : (f - minFretUsed === 0 ? null : Math.min(f - minFretUsed, 4))),
+      positionStart: Math.max(minFretUsed, 1),
+      barreAt: (shapeName === 'A' || shapeName === 'E' || shapeName === 'C' || shapeName === 'G') && minFretUsed > 0 ? minFretUsed : undefined,
     };
 
-    // Get scale positions in this fret range
-    const fretRangeStart = Math.max(minFret - 1, 0);
-    const fretRangeEnd = Math.min(maxFret + 2, 24);
-    const scalePattern = getScalePositions(scale, tuning, [fretRangeStart, fretRangeEnd]);
+    // 3. Scale pattern for this window - cover the span of the voicing plus a 1-fret buffer
+    const fretRangeStart = Math.max(minFretUsed - 1, 0);
+    const fretRangeEnd = Math.min(maxFretUsed + 1, 24);
+    const scalePatternRaw = getScalePositions(scale, tuning, [fretRangeStart, fretRangeEnd]);
+    const scalePattern = labelIntervals(scalePatternRaw, root);
 
     shapes.push({
       shape: shapeName,
@@ -827,4 +865,14 @@ export function labelIntervals(
     ...pos,
     interval: intervalBetween(root, pos.note),
   }));
+}
+
+/**
+ * Calculate accuracy for a chord transition.
+ * Returns a value between 0 and 1.
+ */
+export function calculateTransitionAccuracy(actualTimeMs: number, targetBPM: number): number {
+  if (actualTimeMs <= 0) return 0;
+  const expectedTimeMs = 60000 / targetBPM;
+  return Math.min(1, expectedTimeMs / actualTimeMs);
 }

@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useMemo, type ReactNode } from 'react';
+import React, { createContext, useContext, useState, useMemo, useCallback, type ReactNode } from 'react';
 
 import type {
   NoteName,
@@ -10,6 +10,8 @@ import type {
   FretPosition,
   RomanNumeral,
   KeyCandidate,
+  PlaybackOptions,
+  PlaybackState,
 } from '../types/theory';
 
 import { TUNING_PRESETS } from '../types/theory';
@@ -24,6 +26,8 @@ import {
   analyzeProgression,
 } from '../lib/theoryEngine';
 
+import { playbackEngine } from '../lib/playbackEngine';
+
 // ---------------------------------------------------------------------------
 // State shape
 // ---------------------------------------------------------------------------
@@ -37,6 +41,8 @@ interface TheoryState {
   isLeftHanded: boolean;
   activeCAGEDShape: CAGEDShapeName | null;
   chordProgression: string[];
+  playbackOptions: PlaybackOptions;
+  playbackState: PlaybackState;
 }
 
 // ---------------------------------------------------------------------------
@@ -65,6 +71,11 @@ interface TheoryActions {
   setIsLeftHanded: React.Dispatch<React.SetStateAction<boolean>>;
   setActiveCAGEDShape: React.Dispatch<React.SetStateAction<CAGEDShapeName | null>>;
   setChordProgression: React.Dispatch<React.SetStateAction<string[]>>;
+  setPlaybackOptions: React.Dispatch<React.SetStateAction<PlaybackOptions>>;
+  playCurrentScale: () => void;
+  playCurrentChord: () => void;
+  playProgression: () => void;
+  stopPlayback: () => void;
 }
 
 // ---------------------------------------------------------------------------
@@ -89,6 +100,16 @@ export function TheoryProvider({ children }: { children: ReactNode }) {
   const [isLeftHanded, setIsLeftHanded] = useState(false);
   const [activeCAGEDShape, setActiveCAGEDShape] = useState<CAGEDShapeName | null>(null);
   const [chordProgression, setChordProgression] = useState<string[]>([]);
+  const [playbackOptions, setPlaybackOptions] = useState<PlaybackOptions>({
+    bpm: 120,
+    mode: 'arpeggio',
+    instrument: 'acoustic'
+  });
+  const [playbackState, setPlaybackState] = useState<PlaybackState>({
+    isPlaying: false,
+    activeNoteIndex: null,
+    progress: 0
+  });
 
   // --- Derived / memoized computations ---
 
@@ -124,6 +145,47 @@ export function TheoryProvider({ children }: { children: ReactNode }) {
     return analyzeProgression(chordProgression, selectedKey);
   }, [chordProgression, selectedKey]);
 
+  // --- Playback Actions ---
+
+  const stopPlayback = useCallback(() => {
+    playbackEngine.stop();
+    setPlaybackState({ isPlaying: false, activeNoteIndex: null, progress: 0 });
+  }, []);
+
+  const onNoteIndex = useCallback((index: number | null) => {
+    setPlaybackState(prev => ({
+      ...prev,
+      activeNoteIndex: index,
+      isPlaying: index !== null
+    }));
+  }, []);
+
+  const playCurrentScale = useCallback(() => {
+    if (!selectedScale) return;
+    const notes = getScaleNotes(selectedScale.root, selectedScale.type);
+    // Add octave to notes for Tone.js (simplification: all in octave 4)
+    const notesWithOctave = notes.map(n => `${n}4`);
+    playbackEngine.playNotes(notesWithOctave, { ...playbackOptions, mode: 'arpeggio' }, onNoteIndex);
+  }, [selectedScale, playbackOptions, onNoteIndex]);
+
+  const playCurrentChord = useCallback(() => {
+    if (!selectedChord) return;
+    const notes = getChordNotes(selectedChord.root, selectedChord.quality);
+    const notesWithOctave = notes.map((n, i) => `${n}${3 + Math.floor(i/3)}`);
+    playbackEngine.playNotes(notesWithOctave, playbackOptions, onNoteIndex);
+  }, [selectedChord, playbackOptions, onNoteIndex]);
+
+  const playProgression = useCallback(() => {
+    if (chordProgression.length === 0) return;
+    // For now, play the roots of the progression
+    const notesWithOctave = chordProgression.map(symbol => {
+      // Very basic extraction of root from symbol
+      const rootMatch = symbol.match(/^[A-G][#b]?/);
+      return rootMatch ? `${rootMatch[0]}3` : 'C3';
+    });
+    playbackEngine.playNotes(notesWithOctave, { ...playbackOptions, mode: 'arpeggio' }, onNoteIndex);
+  }, [chordProgression, playbackOptions, onNoteIndex]);
+
   // --- Context value ---
 
   const value = useMemo<TheoryContextValue>(
@@ -137,6 +199,8 @@ export function TheoryProvider({ children }: { children: ReactNode }) {
       isLeftHanded,
       activeCAGEDShape,
       chordProgression,
+      playbackOptions,
+      playbackState,
       // Derived
       scaleNotes,
       scalePositions,
@@ -153,12 +217,19 @@ export function TheoryProvider({ children }: { children: ReactNode }) {
       setIsLeftHanded,
       setActiveCAGEDShape,
       setChordProgression,
+      setPlaybackOptions,
+      playCurrentScale,
+      playCurrentChord,
+      playProgression,
+      stopPlayback,
     }),
     [
       selectedKey, selectedScale, selectedChord, tuning, fretRange,
       isLeftHanded, activeCAGEDShape, chordProgression,
+      playbackOptions, playbackState,
       scaleNotes, scalePositions, chordNotesMemo, chordPositions,
       detectedKey, romanNumerals,
+      playCurrentScale, playCurrentChord, playProgression, stopPlayback,
     ],
   );
 
