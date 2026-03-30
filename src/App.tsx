@@ -1,4 +1,4 @@
-import { TheoryProvider } from './context/TheoryContext';
+import { TheoryProvider, useTheory } from './context/TheoryContext';
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Music, Guitar, Zap, LayoutPanelLeft, Search, Grid3X3, GraduationCap, PlayCircle } from 'lucide-react';
 import { generateChordSet } from './chordGenerator';
@@ -49,6 +49,16 @@ const DIFFICULTY_OPTIONS: DifficultyOption[] = [
 const GuitarChordTrainer: React.FC = () => {
   const [activeView, setActiveView] = useState<ViewId>('practice');
   const [showTutorial, setShowTutorial] = useState(false);
+  const { 
+    isLeftHanded, 
+    setIsLeftHanded, 
+    playbackOptions, 
+    setPlaybackOptions,
+    playbackState
+  } = useTheory();
+
+  const instrument = playbackOptions.instrument;
+  const setInstrument = (inst: string) => setPlaybackOptions(prev => ({ ...prev, instrument: inst as any }));
 
   useEffect(() => {
     const hasSeenTutorial = localStorage.getItem('fretboard-pro-tutorial-seen');
@@ -76,9 +86,7 @@ const GuitarChordTrainer: React.FC = () => {
   const [showNotes, setShowNotes] = useState(false);
   const [showDiagram, setShowDiagram] = useState(false);
   const [chordPool, setChordPool] = useState<Chord[]>([]);
-  const [instrument, setInstrument] = useState<string>('acoustic');
   const [isInstrumentLoading, setIsInstrumentLoading] = useState(true);
-  const [isLeftHanded, setIsLeftHanded] = useState(false);
   
   const samplerRef = useRef<Tone.Sampler | null>(null);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
