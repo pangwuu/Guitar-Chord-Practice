@@ -47,11 +47,10 @@ const GuitarChordTrainer: React.FC = () => {
     setIsLeftHanded, 
     playbackOptions, 
     setPlaybackOptions,
-    playbackState
+    playbackState,
+    instrument,
+    setInstrument
   } = useTheory();
-
-  const instrument = playbackOptions.instrument;
-  const setInstrument = (inst: string) => setPlaybackOptions(prev => ({ ...prev, instrument: inst as any }));
 
   useEffect(() => {
     const hasSeenTutorial = localStorage.getItem('fretboard-pro-tutorial-seen');
@@ -77,7 +76,7 @@ const GuitarChordTrainer: React.FC = () => {
   const [totalChords, setTotalChords] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [showNotes, setShowNotes] = useState(false);
-  const [showDiagram, setShowDiagram] = useState(false);
+  const [showDiagram, setShowDiagram] = useState(true);
   const [chordPool, setChordPool] = useState<Chord[]>([]);
   const [isInstrumentLoading, setIsInstrumentLoading] = useState(true);
   
@@ -220,7 +219,7 @@ const GuitarChordTrainer: React.FC = () => {
     setScore(0);
     setTotalChords(0);
     setShowNotes(false);
-    setShowDiagram(false);
+    setShowDiagram(true);
   }, []);
 
   useEffect(() => {

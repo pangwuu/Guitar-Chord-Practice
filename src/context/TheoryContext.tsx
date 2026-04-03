@@ -61,6 +61,8 @@ interface TheoryActions {
   setIsLeftHanded: React.Dispatch<React.SetStateAction<boolean>>;
   setActiveCAGEDShape: React.Dispatch<React.SetStateAction<CAGEDShapeName | null>>;
   setPlaybackOptions: React.Dispatch<React.SetStateAction<PlaybackOptions>>;
+  instrument: string;
+  setInstrument: (inst: string) => void;
   playCurrentScale: () => void;
   playCurrentChord: () => void;
   stopPlayback: () => void;
@@ -96,6 +98,11 @@ export function TheoryProvider({ children }: { children: ReactNode }) {
     activeNoteIndex: null,
     progress: 0
   });
+
+  const instrument = playbackOptions.instrument;
+  const setInstrument = useCallback((inst: string) => {
+    setPlaybackOptions(prev => ({ ...prev, instrument: inst as any }));
+  }, []);
 
   // --- Derived / memoized computations ---
 
@@ -176,6 +183,8 @@ export function TheoryProvider({ children }: { children: ReactNode }) {
       setIsLeftHanded,
       setActiveCAGEDShape,
       setPlaybackOptions,
+      instrument,
+      setInstrument,
       playCurrentScale,
       playCurrentChord,
       stopPlayback,
@@ -185,6 +194,7 @@ export function TheoryProvider({ children }: { children: ReactNode }) {
       isLeftHanded, activeCAGEDShape,
       playbackOptions, playbackState,
       scaleNotes, scalePositions, chordNotesMemo, chordPositions,
+      instrument, setInstrument,
       playCurrentScale, playCurrentChord, stopPlayback,
     ],
   );
