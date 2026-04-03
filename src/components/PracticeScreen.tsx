@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useRef } from 'react';
+import * as Tone from 'tone';
 import { Play, RotateCcw, Check, SkipForward, Eye, EyeOff, LayoutPanelLeft, Trophy, Clock, Timer } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
