@@ -1,22 +1,15 @@
 import { TheoryProvider, useTheory } from './context/TheoryContext';
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Music, Guitar, Zap, LayoutPanelLeft, Search, Grid3X3, GraduationCap, PlayCircle } from 'lucide-react';
+import { Music, Guitar, Zap, Grid3X3 } from 'lucide-react';
 import { generateChordSet } from './chordGenerator';
 import * as Tone from 'tone';
 import SetupScreen from './components/SetupScreen';
 import PracticeScreen from './components/PracticeScreen';
 import TheoryDashboard from './components/theory/TheoryDashboard';
 import Sidebar, { ViewId } from './components/layout/Sidebar';
-import PlaceholderView from './components/views/PlaceholderView';
 import CAGEDExplorer from './components/views/CAGEDExplorer';
-import SongAnalyzer from './components/views/SongAnalyzer';
-import ProgressionPlayer from './components/views/ProgressionPlayer';
-import LearningPathView from './components/views/LearningPathView';
-import FingerPlacementGuide from './components/views/FingerPlacementGuide';
 import TransitionTrainer from './components/views/TransitionTrainer';
-import SongImportView from './components/views/SongImportView';
 import OnboardingTutorial from './components/layout/OnboardingTutorial';
-import { Button } from './components/ui/button';
 import { Instrument, GameState, DifficultyOption, Chord, Difficulty } from './types';
 
 const INSTRUMENTS: Record<string, Instrument> = {
@@ -305,20 +298,10 @@ const GuitarChordTrainer: React.FC = () => {
         );
       case 'workbench':
         return <TheoryDashboard />;
-      case 'fingering':
-        return <FingerPlacementGuide />;
       case 'transition':
         return <TransitionTrainer />;
-      case 'analyzer':
-        return <SongAnalyzer />;
-      case 'import':
-        return <SongImportView onAnalyze={() => setActiveView('analyzer')} />;
       case 'caged':
         return <CAGEDExplorer />;
-      case 'playback':
-        return <ProgressionPlayer />;
-      case 'learning':
-        return <LearningPathView />;
       default:
         return <TheoryDashboard />;
     }

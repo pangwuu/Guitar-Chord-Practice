@@ -5,7 +5,11 @@ import { Card, CardContent } from '../ui/card';
 import { Switch } from '../ui/switch';
 import { Label } from '../ui/label';
 
-const FretboardWorkbench: React.FC = () => {
+interface FretboardWorkbenchProps {
+  mode?: 'scale' | 'chord';
+}
+
+const FretboardWorkbench: React.FC<FretboardWorkbenchProps> = ({ mode = 'scale' }) => {
   const { 
     tuning, 
     fretRange, 
@@ -44,8 +48,8 @@ const FretboardWorkbench: React.FC = () => {
     return margin.left + fretPos * fretSpacing;
   };
 
-  const activePositions = selectedChord ? chordPositions : scalePositions;
-  const rootNote = selectedChord ? selectedChord.root : selectedScale?.root;
+  const activePositions = mode === 'chord' ? chordPositions : scalePositions;
+  const rootNote = mode === 'chord' ? selectedChord?.root : selectedScale?.root;
 
   return (
     <Card className="w-full overflow-hidden bg-slate-900 text-slate-200 border-slate-800" role="region" aria-label="Interactive Fretboard">
@@ -53,11 +57,9 @@ const FretboardWorkbench: React.FC = () => {
         <div className="flex justify-between items-center mb-6">
           <div className="flex flex-col">
             <h2 className="text-xl font-bold text-white" id="workbench-title">
-              {selectedChord 
-                ? `${selectedChord.root} ${selectedChord.quality}`
-                : selectedScale 
-                  ? `${selectedScale.root} ${selectedScale.type}`
-                  : 'Fretboard Workbench'}
+              {mode === 'chord'
+                ? (selectedChord ? `${selectedChord.root} ${selectedChord.quality}` : 'Chord Explorer')
+                : (selectedScale ? `${selectedScale.root} ${selectedScale.type}` : 'Scale Explorer')}
             </h2>
             <p className="text-xs text-slate-400" aria-describedby="workbench-title">
               {tuning.name} Tuning • Frets {fretRange.min}-{fretRange.max}

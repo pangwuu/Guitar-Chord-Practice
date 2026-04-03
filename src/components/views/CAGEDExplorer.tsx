@@ -138,7 +138,7 @@ const CAGEDExplorer: React.FC = () => {
                     key={s} 
                     variant={activeShape === s ? 'default' : 'outline'} 
                     size="sm" 
-                    onClick={() => setActiveShape(s)}
+                    onClick={() => setActiveCAGEDShape(s)}
                     className="h-10 text-lg font-bold"
                   >
                     {s}

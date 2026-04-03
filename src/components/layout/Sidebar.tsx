@@ -14,7 +14,7 @@ import {
 import { cn } from '../../lib/utils';
 import { Button } from '../ui/button';
 
-export type ViewId = 'practice' | 'workbench' | 'analyzer' | 'caged' | 'learning' | 'playback' | 'fingering' | 'transition' | 'import';
+export type ViewId = 'practice' | 'workbench' | 'caged' | 'transition';
 
 interface SidebarProps {
   activeView: ViewId;
@@ -37,18 +37,6 @@ const NAV_ITEMS: NavItem[] = [
     icon: Guitar, 
     description: 'Practice your chord shapes' 
   },
-  { 
-    id: 'workbench', 
-    label: 'Theory Workbench', 
-    icon: Music, 
-    description: 'Explore scales and modes' 
-  },
-  {
-    id: 'fingering',
-    label: 'Finger Guide',
-    icon: GraduationCap,
-    description: 'Step-by-step placement'
-  },
   {
     id: 'transition',
     label: 'Transition Trainer',
@@ -56,34 +44,16 @@ const NAV_ITEMS: NavItem[] = [
     description: 'Practice chord switches'
   },
   { 
-    id: 'analyzer', 
-    label: 'Song Analyzer', 
-    icon: Search, 
-    description: 'Analyze chord progressions' 
-  },
-  {
-    id: 'import',
-    label: 'Song Import',
-    icon: PlayCircle,
-    description: 'Import from URL'
+    id: 'workbench', 
+    label: 'Theory Workbench', 
+    icon: Music, 
+    description: 'Explore scales and modes' 
   },
   { 
     id: 'caged', 
     label: 'CAGED Explorer', 
     icon: Grid3X3, 
     description: 'Master the CAGED system'
-  },
-  { 
-    id: 'playback', 
-    label: 'Progression Player', 
-    icon: PlayCircle, 
-    description: 'Hear your theory in action'
-  },
-  { 
-    id: 'learning', 
-    label: 'Learning Path', 
-    icon: GraduationCap, 
-    description: 'Step-by-step guitar journey'
   },
 ];
 

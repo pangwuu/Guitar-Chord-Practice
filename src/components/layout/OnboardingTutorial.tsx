@@ -59,7 +59,7 @@ const OnboardingTutorial: React.FC<OnboardingTutorialProps> = ({ onComplete }) =
     },
     {
       title: 'Youre Ready!',
-      description: 'Use the sidebar to explore the Theory Workbench, Song Analyzer, CAGED Explorer, and more. Happy playing!',
+      description: 'Use the sidebar to explore the Theory Workbench, Transition Trainer, CAGED Explorer, and more. Happy playing!',
       icon: <CheckCircle2 className="w-12 h-12 text-green-500" />
     }
   ];
